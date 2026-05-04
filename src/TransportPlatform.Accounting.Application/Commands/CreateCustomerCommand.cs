@@ -17,3 +17,9 @@ public record RegisterMyProfileCommand(
     Guid IdentityId);
 
 public record CreateCustomerResult(Guid CustomerId);
+
+public record UpdateMyProfileCommand(
+    string FirstName,
+    string LastName,
+    DateOnly DateOfBirth,
+    Guid IdentityId);

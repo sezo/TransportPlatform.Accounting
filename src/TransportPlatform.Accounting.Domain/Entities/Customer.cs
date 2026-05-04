@@ -42,5 +42,19 @@ public class Customer
         };
     }
 
+    public void Update(string firstName, string lastName, DateOnly dateOfBirth)
+    {
+        if (string.IsNullOrWhiteSpace(firstName))
+            throw new AccountingDomainException("Customer first name is required.");
+        if (string.IsNullOrWhiteSpace(lastName))
+            throw new AccountingDomainException("Customer last name is required.");
+        if (dateOfBirth >= DateOnly.FromDateTime(DateTime.UtcNow).AddYears(-16))
+            throw new AccountingDomainException("Customer must be at least 16 years old.");
+
+        FirstName = firstName.Trim();
+        LastName = lastName.Trim();
+        DateOfBirth = dateOfBirth;
+    }
+
     public string FullName => $"{FirstName} {LastName}";
 }

@@ -9,4 +9,5 @@ public interface ICustomerRepository
     Task<Customer?> GetByIdentityIdAsync(Guid identityId, CancellationToken ct = default);
     Task<IEnumerable<Customer>> GetAllAsync(int page, int pageSize, CancellationToken ct = default);
     Task AddAsync(Customer customer, CancellationToken ct = default);
+    Task UpdateAsync(Customer customer, CancellationToken ct = default);
 }

@@ -27,4 +27,10 @@ public class CustomerRepository(AccountingDbContext db) : ICustomerRepository
         await db.Customers.AddAsync(customer, ct);
         await db.SaveChangesAsync(ct);
     }
+
+    public async Task UpdateAsync(Customer customer, CancellationToken ct)
+    {
+        db.Customers.Update(customer);
+        await db.SaveChangesAsync(ct);
+    }
 }

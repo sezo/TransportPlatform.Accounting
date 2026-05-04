@@ -14,6 +14,7 @@ namespace TransportPlatform.Accounting.Api.Controllers;
 public class CustomersController(
     CreateCustomerHandler createHandler,
     RegisterMyProfileHandler registerMyProfileHandler,
+    UpdateMyProfileHandler updateMyProfileHandler,
     GetCustomersHandler getHandler,
     UserContext userContext) : ControllerBase
 {
@@ -78,6 +79,29 @@ public class CustomersController(
         return CreatedAtAction(nameof(GetById), new { id = result.CustomerId }, result);
     }
 
+    /// <summary>Update the authenticated user's profile (first name, last name, date of birth).</summary>
+    [HttpPut("me")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateMyProfile(
+        [FromBody] UpdateMyProfileRequest request,
+        CancellationToken ct)
+    {
+        if (userContext.UserId is null)
+            return Unauthorized(new { message = "No authenticated user identity found." });
+
+        await updateMyProfileHandler.HandleAsync(
+            new UpdateMyProfileCommand(
+                request.FirstName,
+                request.LastName,
+                request.DateOfBirth,
+                userContext.UserId.Value), ct);
+
+        return NoContent();
+    }
+
     /// <summary>Create a customer record (admin use).</summary>
     /// <remarks>
     /// Optionally supply IdentityId to link the record to an existing identity provider account.
@@ -103,6 +127,11 @@ public class CustomersController(
         return CreatedAtAction(nameof(GetById), new { id = result.CustomerId }, result);
     }
 }
+
+public record UpdateMyProfileRequest(
+    string FirstName,
+    string LastName,
+    DateOnly DateOfBirth);
 
 public record RegisterMyProfileRequest(
     string FirstName,

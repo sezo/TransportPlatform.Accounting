@@ -6,6 +6,7 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
 COPY ["NuGet.config", "."]
+RUN sed -i 's/localhost:5555/host.docker.internal:5555/g' NuGet.config
 COPY ["src/TransportPlatform.Accounting.Api/TransportPlatform.Accounting.Api.csproj", "TransportPlatform.Accounting.Api/"]
 COPY ["src/TransportPlatform.Accounting.Infrastructure/TransportPlatform.Accounting.Infrastructure.csproj", "TransportPlatform.Accounting.Infrastructure/"]
 COPY ["src/TransportPlatform.Accounting.Application/TransportPlatform.Accounting.Application.csproj", "TransportPlatform.Accounting.Application/"]

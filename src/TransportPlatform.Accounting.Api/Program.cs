@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 using FluentValidation.AspNetCore;
 using TransportPlatform.Accounting.Application.Handlers;
 using TransportPlatform.Accounting.Domain.Exceptions;
@@ -14,20 +14,22 @@ builder.Services.AddAccountingInfrastructure(builder.Configuration);
 builder.Services.AddTransportAuth(builder.Configuration);
 builder.Services.AddTransportObservability(builder.Configuration, "transport-accounting");
 
-// ── Application handlers ───────────────────────────────────────────────────
+// â”€â”€ Application handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 builder.Services.AddScoped<CreateCustomerHandler>();
 builder.Services.AddScoped<RegisterMyProfileHandler>();
+builder.Services.AddScoped<UpdateMyProfileHandler>();
 builder.Services.AddScoped<RegisterUserHandler>();
+builder.Services.AddScoped<LoginHandler>();
 builder.Services.AddScoped<CreateEmployeeHandler>();
 builder.Services.AddScoped<GetLedgerHandler>();
 builder.Services.AddScoped<GetCustomersHandler>();
 builder.Services.AddScoped<GetEmployeesHandler>();
 
-// ── Validation ─────────────────────────────────────────────────────────────
+// â”€â”€ Validation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
-// ── API ────────────────────────────────────────────────────────────────────
+// â”€â”€ API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>

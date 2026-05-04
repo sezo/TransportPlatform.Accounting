@@ -1,4 +1,4 @@
-name: transport_accounting
+﻿name: transport_accounting
 
 services:
   accounting-svc:
@@ -20,9 +20,13 @@ services:
       - Keycloak__Realm=transport
       - Keycloak__AdminUsername=admin
       - Keycloak__AdminPassword=admin
+      - Keycloak__ClientId=transport-backoffice
       - Observability__OtlpEndpoint=http://otel-collector:4317
+    hostname: accounting-svc
     networks:
-      - transport-net
+      transport-net:
+        aliases:
+          - accounting-svc
     restart: unless-stopped
 
 networks:
