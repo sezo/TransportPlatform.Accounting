@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TransportPlatform.Accounting.Application.Handlers;
@@ -6,7 +7,8 @@ using TransportPlatform.Accounting.Application.Queries;
 namespace TransportPlatform.Accounting.Api.Controllers;
 
 [ApiController]
-[Route("api/ledger")]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/ledger")]
 [Authorize(Policy = "permission:accounting:read")]
 public class LedgerController(GetLedgerHandler handler) : ControllerBase
 {

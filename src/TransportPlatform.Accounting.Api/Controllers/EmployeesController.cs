@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TransportPlatform.Accounting.Application.Commands;
@@ -8,7 +9,8 @@ using TransportPlatform.Accounting.Domain.Exceptions;
 namespace TransportPlatform.Accounting.Api.Controllers;
 
 [ApiController]
-[Route("api/employees")]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/employees")]
 [Authorize(Policy = "permission:accounting:write")]
 public class EmployeesController(
     CreateEmployeeHandler createHandler,

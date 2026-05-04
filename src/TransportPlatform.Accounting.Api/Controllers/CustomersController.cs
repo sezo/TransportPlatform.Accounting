@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TransportPlatform.Accounting.Application.Commands;
@@ -9,7 +10,8 @@ using TransportPlatform.Infrastructure.Common.Auth;
 namespace TransportPlatform.Accounting.Api.Controllers;
 
 [ApiController]
-[Route("api/customers")]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/customers")]
 [Authorize(Policy = "permission:accounting:write")]
 public class CustomersController(
     CreateCustomerHandler createHandler,

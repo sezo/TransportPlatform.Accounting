@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Asp.Versioning;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TransportPlatform.Accounting.Application.Commands;
 using TransportPlatform.Accounting.Application.Handlers;
@@ -7,7 +8,8 @@ using TransportPlatform.Accounting.Domain.Exceptions;
 namespace TransportPlatform.Accounting.Api.Controllers;
 
 [ApiController]
-[Route("api/accounting/auth")]
+[ApiVersion("1.0")]
+[Route("api/accounting/v{version:apiVersion}/auth")]
 [AllowAnonymous]
 public class AuthController(
     RegisterUserHandler registerHandler,
