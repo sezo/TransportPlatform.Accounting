@@ -1,0 +1,30 @@
+name: transport_accounting
+
+services:
+  accounting-svc:
+    build:
+      context: .
+      dockerfile: src/TransportPlatform.Accounting.Api/Dockerfile
+    ports:
+      - "5101:5101"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5101
+      - ConnectionStrings__AccountingDb=Host=postgres-accounting;Port=5432;Database=accounting;Username=transport;Password=transport
+      - RabbitMQ__Host=rabbitmq
+      - RabbitMQ__Username=transport
+      - RabbitMQ__Password=transport
+      - Keycloak__Authority=http://keycloak:8080/realms/transport
+      - Keycloak__Audience=transport-accounting
+      - Keycloak__AdminUrl=http://keycloak:8080
+      - Keycloak__Realm=transport
+      - Keycloak__AdminUsername=admin
+      - Keycloak__AdminPassword=admin
+      - Observability__OtlpEndpoint=http://otel-collector:4317
+    networks:
+      - transport-net
+    restart: unless-stopped
+
+networks:
+  transport-net:
+    external: true

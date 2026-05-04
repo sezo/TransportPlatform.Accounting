@@ -1,0 +1,6 @@
+@TransportPlatform.Accounting.Api_HostAddress = http://localhost:5009
+
+GET {{TransportPlatform.Accounting.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
