@@ -1,0 +1,193 @@
+# ── Namespace ─────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: transport
+
+---
+# ── Secret — sensitive values, base64-encoded ─────────────────────────────────
+# In production: use Vault / Azure Key Vault / Sealed Secrets, not plain Secrets
+# Generate values: echo -n "transport" | base64
+apiVersion: v1
+kind: Secret
+metadata:
+  name: accounting-secrets
+  namespace: transport
+type: Opaque
+data:
+  db-password:       dHJhbnNwb3J0        # transport
+  rabbitmq-password: dHJhbnNwb3J0        # transport
+  keycloak-admin-password: YWRtaW4=      # admin
+
+---
+# ── ConfigMap — non-sensitive config ──────────────────────────────────────────
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: accounting-config
+  namespace: transport
+data:
+  ASPNETCORE_ENVIRONMENT:      "Production"
+  ASPNETCORE_URLS:             "http://+:5101"
+  ConnectionStrings__AccountingDb: "Host=postgres-accounting;Port=5432;Database=accounting;Username=transport"
+  RabbitMQ__Host:              "rabbitmq"
+  RabbitMQ__Username:          "transport"
+  Keycloak__Authority:         "http://keycloak:8080/realms/transport"
+  Keycloak__Audience:          "transport-accounting"
+  Keycloak__AdminUrl:          "http://keycloak:8080"
+  Keycloak__Realm:             "transport"
+  Keycloak__AdminUsername:     "admin"
+  Keycloak__ClientId:          "transport-backoffice"
+  Observability__OtlpEndpoint: "http://otel-collector:4317"
+
+---
+# ── Deployment ────────────────────────────────────────────────────────────────
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: accounting
+  namespace: transport
+  labels:
+    app: accounting
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: accounting
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0      # never go below desired replicas during rollout
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: accounting
+    spec:
+      # Wait for Postgres and RabbitMQ before starting
+      initContainers:
+        - name: wait-for-postgres
+          image: busybox:1.36
+          command: ['sh', '-c', 'until nc -z postgres-accounting 5432; do echo waiting for postgres; sleep 2; done']
+        - name: wait-for-rabbitmq
+          image: busybox:1.36
+          command: ['sh', '-c', 'until nc -z rabbitmq 5672; do echo waiting for rabbitmq; sleep 2; done']
+
+      containers:
+        - name: accounting
+          image: your-registry/transport-accounting:latest   # replace with your registry
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5101
+              name: http
+
+          # Non-sensitive config from ConfigMap
+          envFrom:
+            - configMapRef:
+                name: accounting-config
+
+          # Sensitive values from Secret
+          env:
+            - name: ConnectionStrings__AccountingDb
+              valueFrom:
+                secretKeyRef:
+                  name: accounting-secrets
+                  key: db-password
+              # Override the ConfigMap value with the full string including password
+            - name: ConnectionStrings__AccountingDb
+              value: "Host=postgres-accounting;Port=5432;Database=accounting;Username=transport;Password=$(DB_PASSWORD)"
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: accounting-secrets
+                  key: db-password
+            - name: RabbitMQ__Password
+              valueFrom:
+                secretKeyRef:
+                  name: accounting-secrets
+                  key: rabbitmq-password
+            - name: Keycloak__AdminPassword
+              valueFrom:
+                secretKeyRef:
+                  name: accounting-secrets
+                  key: keycloak-admin-password
+
+          # Liveness — if this fails, K8s restarts the container
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5101
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            failureThreshold: 3
+
+          # Readiness — if this fails, K8s removes pod from Service endpoints (stops sending traffic)
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5101
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+
+          # Resource limits — always set these in production
+          resources:
+            requests:
+              cpu: "100m"       # 0.1 CPU core guaranteed
+              memory: "128Mi"
+            limits:
+              cpu: "500m"       # max 0.5 CPU core
+              memory: "512Mi"
+
+---
+# ── Service — internal cluster DNS: accounting.transport.svc.cluster.local ────
+apiVersion: v1
+kind: Service
+metadata:
+  name: accounting
+  namespace: transport
+  labels:
+    app: accounting
+spec:
+  selector:
+    app: accounting
+  ports:
+    - name: http
+      port: 5101
+      targetPort: 5101
+  type: ClusterIP    # internal only — exposed via Ingress, not directly
+
+---
+# ── HorizontalPodAutoscaler — scale 2–5 pods based on CPU ────────────────────
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: accounting-hpa
+  namespace: transport
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: accounting
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+
+---
+# ── PodDisruptionBudget — always keep at least 1 pod running during node drain─
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: accounting-pdb
+  namespace: transport
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: accounting
